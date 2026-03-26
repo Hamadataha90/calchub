@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import CalorieForm from "@/components/calculators/CalorieForm";
 
+
 export const metadata: Metadata = {
   title: "Calorie Calculator | CalcHub",
   description:

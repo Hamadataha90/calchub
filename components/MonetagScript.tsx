@@ -1,39 +1,54 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
-const MONETAG_KEY = process.env.NEXT_PUBLIC_MONETAG_KEY;
+interface MonetagScriptProps {
+  /** Only start the load sequence when true (i.e. result is visible) */
+  isActive: boolean;
+}
 
-export default function MonetagScript() {
-  const loaded = useRef(false);
+const SESSION_KEY = "monetag_loaded";
 
+export default function MonetagScript({ isActive }: MonetagScriptProps) {
   useEffect(() => {
-    if (!MONETAG_KEY || loaded.current) return;
+    if (!isActive) return;
 
-    function load() {
-      if (loaded.current) return;
-      loaded.current = true;
+    // Run only once per browser session
+    if (sessionStorage.getItem(SESSION_KEY)) return;
+
+    let fired = false;
+
+    const inject = () => {
+      if (fired) return;
+      fired = true;
+
+      document.removeEventListener("click", inject, { capture: true });
+      clearTimeout(timer);
+
+      // Guard against duplicate script tags
+      if (document.querySelector('script[data-zone="223528"]')) return;
 
       const script = document.createElement("script");
-      script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${MONETAG_KEY}`;
+      script.src = "https://quge5.com/88/tag.min.js";
+      script.setAttribute("data-zone", "223528");
       script.async = true;
-      script.crossOrigin = "anonymous";
-      document.head.appendChild(script);
-    }
+      script.setAttribute("data-cfasync", "false");
+      document.body.appendChild(script);
 
-    // Trigger after 10 seconds
-    const timer = setTimeout(load, 10_000);
+      sessionStorage.setItem(SESSION_KEY, "1");
+    };
 
-    // OR on first user interaction
-    const events = ["click", "scroll", "keydown", "touchstart"] as const;
-    const onInteraction = () => load();
-    events.forEach((ev) => window.addEventListener(ev, onInteraction, { once: true }));
+    // Trigger on first click after result is shown
+    document.addEventListener("click", inject, { capture: true, once: true });
+
+    // Fallback: 10 seconds after result appears
+    const timer = setTimeout(inject, 10_000);
 
     return () => {
+      document.removeEventListener("click", inject, { capture: true });
       clearTimeout(timer);
-      events.forEach((ev) => window.removeEventListener(ev, onInteraction));
     };
-  }, []);
+  }, [isActive]);
 
   return null;
 }

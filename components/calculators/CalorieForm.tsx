@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useState, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import type { FormData } from "@/types";
 import Link from "next/link";
 import ResultCard from "@/components/calculators/ResultCard";
@@ -40,40 +40,39 @@ function adjustForGoal(tdee: number, goal: FormData["goal"]): number {
 
 // ── Initial form state ──────────────────────────────────────────────────────
 const initialState: FormData = {
-  age: 0,
-  weight: 0,
-  height: 0,
+  age: 0,      // user must type age — 0 triggers the validation message
+  weight: 70,  // matches the slider's visual start position
+  height: 170, // matches the slider's visual start position
   gender: "male",
   activity: "sedentary",
   goal: "maintain",
 };
 
-interface CalorieFormProps {
-  onSubmit?: (data: FormData, calories: number) => void;
+// ── Validation ──────────────────────────────────────────────────────────────
+interface ValidationErrors {
+  age?: string;
+  weight?: string;
+  height?: string;
 }
 
-export default function CalorieForm({ onSubmit }: CalorieFormProps) {
+function validate(data: FormData): ValidationErrors {
+  const errors: ValidationErrors = {};
+  if (!data.age || data.age < 10 || data.age > 120)
+    errors.age = "Enter a valid age between 10 and 120.";
+  // weight & height now always start at valid defaults from the slider — no need to check for 0
+  if (data.weight < 30 || data.weight > 250)
+    errors.weight = "Adjust weight to a value between 30–250 kg.";
+  if (data.height < 100 || data.height > 250)
+    errors.height = "Adjust height to a value between 100–250 cm.";
+  return errors;
+}
+
+export default function CalorieForm() {
   const [form, setForm] = useState<FormData>(initialState);
   const [calories, setCalories] = useState<number | null>(null);
+  const [errors, setErrors] = useState<ValidationErrors>({});
+  const resultRef = useRef<HTMLDivElement>(null);
   const emailRef = useRef<HTMLDivElement>(null);
-
-  // ── Restore from localStorage on mount ─────────────────────────────────────
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("calchub_result");
-      if (!stored) return;
-      const { calories: c, goal: g } = JSON.parse(stored) as {
-        calories: number;
-        goal: FormData["goal"];
-      };
-      if (c > 0 && ["lose", "maintain", "gain"].includes(g)) {
-        setCalories(c);
-        setForm(JSON.parse(stored).form || ((prev: FormData) => ({ ...prev, goal: g })));
-      }
-    } catch {
-      // ignore corrupt data
-    }
-  }, []);
 
   function scrollToEmail() {
     emailRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -87,40 +86,40 @@ export default function CalorieForm({ onSubmit }: CalorieFormProps) {
       ...prev,
       [name]: type === "number" || type === "range" ? Number(value) : value,
     }));
+    // Clear individual field error on change
+    if (name in errors) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
   }
 
-  // ── Live Calculation ───────────────────────────────────────────────────────
-  useEffect(() => {
-    // Only calculate if we have valid baseline numbers
-    if (form.age >= 10 && form.weight >= 20 && form.height >= 100) {
-      const bmr = calcBMR(form);
-      const tdee = calcTDEE(bmr, form.activity);
-      const result = adjustForGoal(tdee, form.goal);
-      setCalories(result);
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
 
-      // Persist to storage (debounced naturally by the user stopping interactions)
-      const timeoutId = setTimeout(() => {
-        try {
-          localStorage.setItem(
-            "calchub_result",
-            JSON.stringify({ calories: result, goal: form.goal, form })
-          );
-        } catch {
-          // ignore
-        }
-      }, 500);
-      return () => clearTimeout(timeoutId);
-    } else {
-      setCalories(null);
+    const validationErrors = validate(form);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
     }
-  }, [form]);
+
+    const bmr = calcBMR(form);
+    const tdee = calcTDEE(bmr, form.activity);
+    const result = adjustForGoal(tdee, form.goal);
+    setCalories(result);
+    setErrors({});
+
+    // Scroll to result after paint
+    setTimeout(() => {
+      resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+  }
 
   const sliderCls =
     "w-full h-2 rounded-full appearance-none cursor-pointer accent-blue-600 bg-gray-200";
 
   return (
     <div className="space-y-6">
-      <motion.div 
+      <motion.form
+        onSubmit={handleSubmit}
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
@@ -150,12 +149,14 @@ export default function CalorieForm({ onSubmit }: CalorieFormProps) {
               type="number"
               min={10}
               max={120}
-              required
               placeholder="25"
               value={form.age || ""}
               onChange={handleChange}
-              className="w-full rounded-2xl border-0 bg-white/80 px-4 py-3.5 text-sm font-medium text-slate-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-all outline-none"
+              className={`w-full rounded-2xl border-0 bg-white/80 px-4 py-3.5 text-sm font-medium text-slate-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] ring-1 ring-inset transition-all outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 ${errors.age ? "ring-red-400" : "ring-slate-200"}`}
             />
+            {errors.age && (
+              <p className="text-xs font-medium text-red-500 mt-0.5">{errors.age}</p>
+            )}
           </div>
 
           {/* Weight — slider */}
@@ -169,8 +170,8 @@ export default function CalorieForm({ onSubmit }: CalorieFormProps) {
               </span>
             </div>
             <div className="relative pt-2 pb-1">
-              <div 
-                className="absolute left-0 top-1/2 -translate-y-1/2 h-2.5 rounded-l-full bg-gradient-to-r from-blue-500 to-indigo-500 pointer-events-none shadow-sm" 
+              <div
+                className="absolute left-0 top-1/2 -translate-y-1/2 h-2.5 rounded-l-full bg-gradient-to-r from-blue-500 to-indigo-500 pointer-events-none shadow-sm"
                 style={{ width: `${((form.weight - 30) / (250 - 30)) * 100}%` }}
               />
               <input
@@ -180,7 +181,6 @@ export default function CalorieForm({ onSubmit }: CalorieFormProps) {
                 min={30}
                 max={250}
                 step={1}
-                required
                 value={form.weight || 70}
                 onChange={handleChange}
                 className="w-full h-2.5 rounded-full appearance-none cursor-pointer bg-slate-200/80 shadow-inner accent-white hover:accent-indigo-100 transition-all"
@@ -190,6 +190,9 @@ export default function CalorieForm({ onSubmit }: CalorieFormProps) {
               <span>30 kg</span>
               <span>250 kg</span>
             </div>
+            {errors.weight && (
+              <p className="text-xs font-medium text-red-500 mt-0.5">{errors.weight}</p>
+            )}
           </div>
 
           {/* Height — slider */}
@@ -203,8 +206,8 @@ export default function CalorieForm({ onSubmit }: CalorieFormProps) {
               </span>
             </div>
             <div className="relative pt-2 pb-1">
-              <div 
-                className="absolute left-0 top-1/2 -translate-y-1/2 h-2.5 rounded-l-full bg-gradient-to-r from-blue-500 to-indigo-500 pointer-events-none shadow-sm" 
+              <div
+                className="absolute left-0 top-1/2 -translate-y-1/2 h-2.5 rounded-l-full bg-gradient-to-r from-blue-500 to-indigo-500 pointer-events-none shadow-sm"
                 style={{ width: `${((form.height - 100) / (250 - 100)) * 100}%` }}
               />
               <input
@@ -214,7 +217,6 @@ export default function CalorieForm({ onSubmit }: CalorieFormProps) {
                 min={100}
                 max={250}
                 step={1}
-                required
                 value={form.height || 170}
                 onChange={handleChange}
                 className="w-full h-2.5 rounded-full appearance-none cursor-pointer bg-slate-200/80 shadow-inner accent-white hover:accent-indigo-100 transition-all"
@@ -224,6 +226,9 @@ export default function CalorieForm({ onSubmit }: CalorieFormProps) {
               <span>100 cm</span>
               <span>250 cm</span>
             </div>
+            {errors.height && (
+              <p className="text-xs font-medium text-red-500 mt-0.5">{errors.height}</p>
+            )}
           </div>
         </fieldset>
 
@@ -245,7 +250,6 @@ export default function CalorieForm({ onSubmit }: CalorieFormProps) {
                 <select
                   id="gender"
                   name="gender"
-                  required
                   value={form.gender}
                   onChange={handleChange}
                   className="w-full appearance-none rounded-2xl border-0 bg-white/80 px-4 py-3.5 pr-10 text-sm font-medium text-slate-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-all cursor-pointer outline-none"
@@ -270,7 +274,6 @@ export default function CalorieForm({ onSubmit }: CalorieFormProps) {
                 <select
                   id="activity"
                   name="activity"
-                  required
                   value={form.activity}
                   onChange={handleChange}
                   className="w-full appearance-none rounded-2xl border-0 bg-white/80 px-4 py-3.5 pr-10 text-sm font-medium text-slate-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-all cursor-pointer outline-none"
@@ -298,7 +301,6 @@ export default function CalorieForm({ onSubmit }: CalorieFormProps) {
                 <select
                   id="goal"
                   name="goal"
-                  required
                   value={form.goal}
                   onChange={handleChange}
                   className="w-full appearance-none rounded-2xl border-0 bg-white/80 px-4 py-3.5 pr-10 text-sm font-medium text-slate-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-all cursor-pointer outline-none"
@@ -316,66 +318,82 @@ export default function CalorieForm({ onSubmit }: CalorieFormProps) {
             </div>
           </div>
         </fieldset>
-      </motion.div>
 
-
-      {calories !== null && (
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, type: "spring", bounce: 0.4 }}
-          className="space-y-6"
+        {/* ── Submit Button ────────────────────────────────────────────── */}
+        <motion.button
+          type="submit"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.97 }}
+          className="relative z-10 w-full rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 py-4 text-sm font-bold text-white shadow-lg shadow-blue-500/25 transition-all hover:from-blue-500 hover:to-indigo-500"
         >
-          <ResultCard calories={calories} goal={form.goal} onCTAClick={scrollToEmail} />
-          
-          <div ref={emailRef}>
-            <EmailCapture calories={calories} goal={form.goal} />
-          </div>
+          Calculate Calories
+        </motion.button>
+      </motion.form>
 
-          <div className="pt-6 space-y-4">
-            <h3 className="text-center text-xs font-bold uppercase tracking-widest text-slate-400">
-              Learn more about your goal
-            </h3>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <Link
-                href="/blog/how-many-calories"
-                className="group flex flex-col justify-center rounded-2xl border border-white/50 bg-white/40 backdrop-blur-md p-5 shadow-sm hover:bg-white/60 hover:shadow-md hover:-translate-y-1 transition-all active:scale-95"
-              >
-                <span className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                  Basics of TDEE
-                </span>
-                <span className="mt-1 text-xs text-slate-500">
-                  How energy balance works
-                </span>
-              </Link>
-              <Link
-                href="/blog/best-diet-plan-weight-loss"
-                className="group flex flex-col justify-center rounded-2xl border border-white/50 bg-white/40 backdrop-blur-md p-5 shadow-sm hover:bg-white/60 hover:shadow-md hover:-translate-y-1 transition-all active:scale-95"
-              >
-                <span className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                  Diet Planning
-                </span>
-                <span className="mt-1 text-xs text-slate-500">
-                  Sustainable weight loss
-                </span>
-              </Link>
-              <Link
-                href="/blog/how-to-gain-muscle"
-                className="group flex flex-col justify-center rounded-2xl border border-white/50 bg-white/40 backdrop-blur-md p-5 shadow-sm hover:bg-white/60 hover:shadow-md hover:-translate-y-1 transition-all active:scale-95"
-              >
-                <span className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                  Muscle Building
-                </span>
-                <span className="mt-1 text-xs text-slate-500">
-                  Effective lean bulking
-                </span>
-              </Link>
+      {/* ── Result Section ───────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {calories !== null && (
+          <motion.div
+            ref={resultRef}
+            key="result"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 24 }}
+            transition={{ duration: 0.5, type: "spring", bounce: 0.35 }}
+            className="space-y-6"
+          >
+            <ResultCard calories={calories} goal={form.goal} onCTAClick={scrollToEmail} />
+
+            <div ref={emailRef}>
+              <EmailCapture calories={calories} goal={form.goal} />
             </div>
-          </div>
 
-          <MonetagScript />
-        </motion.div>
-      )}
+            <div className="pt-6 space-y-4">
+              <h3 className="text-center text-xs font-bold uppercase tracking-widest text-slate-400">
+                Learn more about your goal
+              </h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <Link
+                  href="/blog/how-many-calories"
+                  className="group flex flex-col justify-center rounded-2xl border border-white/50 bg-white/40 backdrop-blur-md p-5 shadow-sm hover:bg-white/60 hover:shadow-md hover:-translate-y-1 transition-all active:scale-95"
+                >
+                  <span className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    Basics of TDEE
+                  </span>
+                  <span className="mt-1 text-xs text-slate-500">
+                    How energy balance works
+                  </span>
+                </Link>
+                <Link
+                  href="/blog/best-diet-plan-weight-loss"
+                  className="group flex flex-col justify-center rounded-2xl border border-white/50 bg-white/40 backdrop-blur-md p-5 shadow-sm hover:bg-white/60 hover:shadow-md hover:-translate-y-1 transition-all active:scale-95"
+                >
+                  <span className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    Diet Planning
+                  </span>
+                  <span className="mt-1 text-xs text-slate-500">
+                    Sustainable weight loss
+                  </span>
+                </Link>
+                <Link
+                  href="/blog/how-to-gain-muscle"
+                  className="group flex flex-col justify-center rounded-2xl border border-white/50 bg-white/40 backdrop-blur-md p-5 shadow-sm hover:bg-white/60 hover:shadow-md hover:-translate-y-1 transition-all active:scale-95"
+                >
+                  <span className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    Muscle Building
+                  </span>
+                  <span className="mt-1 text-xs text-slate-500">
+                    Effective lean bulking
+                  </span>
+                </Link>
+              </div>
+            </div>
+
+            {/* Monetag: only active after result is shown */}
+            <MonetagScript isActive={calories !== null} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
