@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your Free Diet Plan — CalcHub</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      padding: 32px 16px;
+    }
+    .wrapper { max-width: 600px; margin: 0 auto; }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      border-radius: 16px 16px 0 0;
+      padding: 40px 32px;
+      text-align: center;
+      color: #fff;
+    }
+    .header h1 { font-size: 24px; font-weight: 800; }
+    .header p  { margin-top: 6px; font-size: 14px; opacity: 0.85; }
+
+    /* Body card */
+    .card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-top: none;
+      border-radius: 0 0 16px 16px;
+      padding: 32px;
+    }
+
+    /* Calorie target */
+    .target {
+      text-align: center;
+      padding: 24px;
+      background: #eff6ff;
+      border-radius: 12px;
+      margin-bottom: 28px;
+    }
+    .target .label { font-size: 12px; font-weight: 600; color: #2563eb; text-transform: uppercase; letter-spacing: .06em; }
+    .target .number { font-size: 56px; font-weight: 900; color: #1d4ed8; line-height: 1; margin: 8px 0 4px; }
+    .target .unit   { font-size: 14px; color: #3b82f6; }
+
+    /* Macros */
+    h2 { font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #0f172a; }
+    .macros { display: flex; gap: 12px; margin-bottom: 28px; }
+    .macro {
+      flex: 1;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+    }
+    .macro .m-val  { font-size: 22px; font-weight: 800; color: #0f172a; }
+    .macro .m-unit { font-size: 11px; color: #64748b; }
+    .macro .m-name { font-size: 12px; font-weight: 600; color: #475569; margin-top: 4px; }
+
+    /* Meal plan */
+    .meals { margin-bottom: 28px; }
+    .meal-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 14px;
+    }
+    .meal-row:last-child { border-bottom: none; }
+    .meal-name { font-weight: 600; }
+    .meal-cal  { color: #64748b; }
+
+    /* Tips */
+    .tips { background: #f0fdf4; border-radius: 10px; padding: 16px 20px; margin-bottom: 24px; }
+    .tips ul { padding-left: 18px; }
+    .tips li  { font-size: 13px; color: #166534; margin-bottom: 6px; }
+
+    /* Footer */
+    .footer { text-align: center; font-size: 11px; color: #94a3b8; padding-top: 16px; }
+    .footer a { color: #2563eb; text-decoration: none; }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <div class="header">
+    <h1>🥗 Your Free Diet Plan</h1>
+    <p>Prepared for {{EMAIL}} · Goal: {{GOAL}}</p>
+  </div>
+
+  <div class="card">
+
+    <!-- Daily calorie target -->
+    <div class="target">
+      <p class="label">Daily Calorie Target</p>
+      <p class="number">{{CALORIES}}</p>
+      <p class="unit">kcal / day</p>
+    </div>
+
+    <!-- Macros -->
+    <h2>Daily Macro Breakdown</h2>
+    <div class="macros">
+      <div class="macro">
+        <div class="m-val">{{PROTEIN}}</div>
+        <div class="m-unit">g</div>
+        <div class="m-name">Protein</div>
+      </div>
+      <div class="macro">
+        <div class="m-val">{{CARBS}}</div>
+        <div class="m-unit">g</div>
+        <div class="m-name">Carbs</div>
+      </div>
+      <div class="macro">
+        <div class="m-val">{{FAT}}</div>
+        <div class="m-unit">g</div>
+        <div class="m-name">Fat</div>
+      </div>
+    </div>
+
+    <!-- Sample meal plan -->
+    <div class="meals">
+      <h2>Sample Daily Meal Plan</h2>
+      <div class="meal-row">
+        <span class="meal-name">☀️ Breakfast</span>
+        <span class="meal-cal">~25% of daily calories</span>
+      </div>
+      <div class="meal-row">
+        <span class="meal-name">🍎 Mid-morning snack</span>
+        <span class="meal-cal">~10% of daily calories</span>
+      </div>
+      <div class="meal-row">
+        <span class="meal-name">🥗 Lunch</span>
+        <span class="meal-cal">~30% of daily calories</span>
+      </div>
+      <div class="meal-row">
+        <span class="meal-name">🍫 Afternoon snack</span>
+        <span class="meal-cal">~10% of daily calories</span>
+      </div>
+      <div class="meal-row">
+        <span class="meal-name">🌙 Dinner</span>
+        <span class="meal-cal">~25% of daily calories</span>
+      </div>
+    </div>
+
+    <!-- Tips -->
+    <div class="tips">
+      <h2>💡 Top Tips</h2>
+      <ul>
+        <li>Drink at least 2 litres of water daily.</li>
+        <li>Prioritise protein at every meal to preserve muscle.</li>
+        <li>Track your weight weekly — adjust calories if no change after 3 weeks.</li>
+        <li>Aim for 7–9 hours of sleep; poor sleep raises hunger hormones.</li>
+        <li>Strength training 2–3× per week boosts your TDEE over time.</li>
+      </ul>
+    </div>
+
+    <div class="footer">
+      <p>Generated by <a href="https://calchub.io">CalcHub</a> · <a href="#">Unsubscribe</a></p>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>
