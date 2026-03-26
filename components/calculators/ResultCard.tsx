@@ -174,14 +174,12 @@ export default function ResultCard({ calories, goal, onCTAClick }: ResultCardPro
 
       {/* CTA Button */}
       {onCTAClick && (
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+        <button
           onClick={onCTAClick}
-          className={`relative z-10 w-full rounded-2xl py-4 text-sm font-bold text-white shadow-lg transition-all ${c.cta}`}
+          className={`relative z-10 w-full rounded-2xl py-4 text-sm font-bold text-white shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] ${c.cta}`}
         >
           Send Detailed Plan to Email →
-        </motion.button>
+        </button>
       )}
     </motion.div>
   );

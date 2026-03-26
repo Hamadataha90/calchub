@@ -122,12 +122,10 @@ export default function EmailCapture({ calories, goal, onSubmit }: EmailCaptureP
               </label>
             </div>
 
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+            <button
               type="submit"
               disabled={loading}
-              className="group relative flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 py-4 text-sm font-bold text-white shadow-lg shadow-slate-900/20 transition-all hover:bg-slate-800 disabled:opacity-70 disabled:cursor-not-allowed"
+              className="group relative flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 py-4 text-sm font-bold text-white shadow-lg shadow-slate-900/20 transition-all hover:scale-[1.02] active:scale-[0.98] hover:bg-slate-800 disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <span className="flex items-center gap-2">
@@ -143,7 +141,7 @@ export default function EmailCapture({ calories, goal, onSubmit }: EmailCaptureP
                   <Send className="h-4 w-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
                 </>
               )}
-            </motion.button>
+            </button>
           </form>
 
           {error && (

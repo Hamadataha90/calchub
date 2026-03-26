@@ -320,14 +320,12 @@ export default function CalorieForm() {
         </fieldset>
 
         {/* ── Submit Button ────────────────────────────────────────────── */}
-        <motion.button
+        <button
           type="submit"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
-          className="relative z-10 w-full rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 py-4 text-sm font-bold text-white shadow-lg shadow-blue-500/25 transition-all hover:from-blue-500 hover:to-indigo-500"
+          className="relative z-10 w-full rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 py-4 text-sm font-bold text-white shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.02] active:scale-[0.98] hover:from-blue-500 hover:to-indigo-500"
         >
           Calculate Calories
-        </motion.button>
+        </button>
       </motion.form>
 
       {/* ── Result Section ───────────────────────────────────────────────── */}
