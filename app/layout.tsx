@@ -13,6 +13,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "CalcHub",
   description: "Free online calculators",
+  other: {
+    monetag: "68f732c7cf1e73aae7c0058433387cc5",
+  },
 };
 
 export default function RootLayout({
