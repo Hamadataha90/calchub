@@ -88,28 +88,34 @@ function StepperInput({
   error?: string;
 }) {
   return (
-    <div className="flex flex-col gap-3">
-      <label className="text-xs font-bold uppercase tracking-widest text-slate-500 pl-1">{label}</label>
-      <div className={`relative flex items-center justify-between p-2 rounded-3xl bg-white/60 backdrop-blur-md shadow-[inset_0_2px_12px_rgba(0,0,0,0.03)] ring-1 ring-inset transition-all duration-300 focus-within:ring-2 focus-within:ring-blue-500 focus-within:bg-white/90 hover:bg-white/80 ${error ? 'ring-red-400 bg-red-50/50' : 'ring-slate-200/80 hover:ring-slate-300'}`}>
+    <div className="flex flex-col gap-2">
+      <label className="text-xs font-bold uppercase tracking-widest text-slate-500 pl-1">
+        {label}
+      </label>
+      <div
+        className={`flex items-center w-full p-1.5 rounded-2xl bg-white/70 backdrop-blur-md shadow-sm border transition-all duration-300 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 hover:bg-white/90 ${
+          error ? "border-red-400 bg-red-50/50" : "border-white/60"
+        }`}
+      >
         <button
           type="button"
           onClick={() => onChange(Math.max(min, value - step))}
-          className="z-10 p-4 rounded-2xl bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all active:scale-95 shadow-sm border border-slate-100"
+          className="shrink-0 w-12 h-12 flex items-center justify-center rounded-xl bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all active:scale-95 shadow-sm border border-slate-100"
         >
           <Minus className="w-5 h-5 stroke-[2.5]" />
         </button>
-        
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="flex items-baseline gap-1.5 pointer-events-auto">
-            <input 
+
+        <div className="flex-1 flex items-center justify-center min-w-0">
+          <div className="flex items-baseline justify-center">
+            <input
               type="number"
               min={min}
               max={max}
               value={value || ""}
               onChange={(e) => onChange(Number(e.target.value))}
-              className="w-24 text-center text-4xl font-black text-slate-800 bg-transparent outline-none tabular-nums p-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all focus:scale-110"
+              className="w-14 sm:w-16 text-center text-2xl font-black text-slate-800 bg-transparent outline-none tabular-nums p-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
-            <span className="text-[10px] font-extrabold text-blue-600 uppercase tracking-widest bg-blue-100/50 px-2 py-1 rounded-lg">
+            <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-1.5 py-0.5 rounded-md ml-1">
               {unit}
             </span>
           </div>
@@ -118,12 +124,14 @@ function StepperInput({
         <button
           type="button"
           onClick={() => onChange(Math.min(max, value + step))}
-          className="z-10 p-4 rounded-2xl bg-gradient-to-b from-blue-50 to-blue-100 text-blue-700 hover:from-blue-100 hover:to-blue-200 transition-all active:scale-95 shadow-sm border border-blue-200/50"
+          className="shrink-0 w-12 h-12 flex items-center justify-center rounded-xl bg-gradient-to-b from-blue-50 to-blue-100 text-blue-700 hover:from-blue-100 hover:to-blue-200 transition-all active:scale-95 shadow-sm border border-blue-200/50"
         >
           <Plus className="w-5 h-5 stroke-[2.5]" />
         </button>
       </div>
-      {error && <p className="text-xs font-semibold text-red-500 px-2">{error}</p>}
+      {error && (
+        <p className="text-xs font-semibold text-red-500 px-2">{error}</p>
+      )}
     </div>
   );
 }
