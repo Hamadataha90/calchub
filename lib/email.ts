@@ -14,13 +14,17 @@ function buildHtml(data: LeadData): string {
     join(process.cwd(), "lib", "pdf-template.html"),
     "utf8"
   );
+  
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.calc-hub.site";
+  
   return template
     .replace(/{{EMAIL}}/g, data.email)
     .replace(/{{CALORIES}}/g, String(data.calories))
     .replace(/{{GOAL}}/g, GOAL_LABELS[data.goal])
     .replace(/{{PROTEIN}}/g, String(Math.round((data.calories * 0.3) / 4)))
     .replace(/{{CARBS}}/g, String(Math.round((data.calories * 0.4) / 4)))
-    .replace(/{{FAT}}/g, String(Math.round((data.calories * 0.3) / 9)));
+    .replace(/{{FAT}}/g, String(Math.round((data.calories * 0.3) / 9)))
+    .replace(/https:\/\/calchub\.io/g, siteUrl);
 }
 
 async function generatePdf(html: string): Promise<Buffer> {
@@ -50,27 +54,51 @@ export async function sendEmail(data: LeadData): Promise<void> {
   }
 
   const html = buildHtml(data);
-  const pdfBuffer = await generatePdf(html);
+  let pdfBuffer: Buffer | null = null;
+  
+  try {
+    pdfBuffer = await generatePdf(html);
+  } catch (err) {
+    console.warn("[email] PDF generation failed (likely serverless environment). Sending email without attachment.", err);
+  }
 
-  // Sending to Resend with attachment
+  interface ResendEmailPayload {
+    from: string;
+    to: string;
+    subject: string;
+    html: string;
+    reply_to?: string;
+    attachments?: Array<{
+      filename: string;
+      content: string;
+    }>;
+  }
+
+  const payload: ResendEmailPayload = {
+    from: "Calc Hub <hello@calc-hub.site>",
+    to: data.email,
+    subject: `Your personalized ${GOAL_LABELS[data.goal]} diet plan`,
+    html,
+    reply_to: "support@calc-hub.site",
+  };
+
+  if (pdfBuffer) {
+    payload.attachments = [
+      {
+        filename: "Diet_Plan.pdf",
+        content: pdfBuffer.toString("base64"),
+      }
+    ];
+  }
+
+  // Sending to Resend
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      from,
-      to: data.email,
-      subject: `Your personalized ${GOAL_LABELS[data.goal]} diet plan`,
-      html,
-      attachments: [
-        {
-          filename: "Diet_Plan.pdf",
-          content: pdfBuffer.toString("base64"),
-        }
-      ]
-    }),
+    body: JSON.stringify(payload),
   });
 
   if (!res.ok) {
